@@ -1,9 +1,11 @@
+import API_ENDPOINTS from "../services/api";
+
 export default function SegmentList({ segments }) {
   if (segments.length === 0) return null;
 
   const handleDownload = async (segment) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/files/download/${segment}`);
+      const response = await fetch(API_ENDPOINTS.DOWNLOAD_FILE(segment));
 
       if (!response.ok) {
         throw new Error("Error al descargar el archivo");
@@ -13,7 +15,7 @@ export default function SegmentList({ segments }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = segment; // Nombre del archivo
+      a.download = segment;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -25,16 +27,17 @@ export default function SegmentList({ segments }) {
   };
 
   return (
-    <div className="mt-4">
-      <h2 className="text-lg font-bold">Segmentos Generados</h2>
-      <ul className="mt-2">
+    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-lg w-full max-w-lg text-white">
+      <h2 className="text-2xl font-bold text-center mb-4">📄 Segmentos Generados</h2>
+      <ul className="space-y-2">
         {segments.map((segment, index) => (
-          <li key={index} className="mt-1">
+          <li key={index} className="flex justify-between items-center bg-white text-indigo-600 p-3 rounded-lg shadow">
+            <span className="font-semibold truncate w-4/5">{segment}</span>
             <button
               onClick={() => handleDownload(segment)}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
+              className="bg-yellow-400 text-gray-900 px-3 py-1 rounded-lg font-bold transition duration-300 hover:bg-yellow-500"
             >
-              Descargar {segment}
+              ⬇ Descargar
             </button>
           </li>
         ))}
