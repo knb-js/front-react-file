@@ -6,13 +6,24 @@ const FileUpload = ({ onUploadComplete }) => {
   const [file, setFile] = useState(null);
   const [segmentSize, setSegmentSize] = useState(80000);
   const [processing, setProcessing] = useState(false);
+  const [uploadDisabled, setUploadDisabled] = useState(false);
 
   const handleFileChange = (event) => {
+    if (processing || uploadDisabled) {
+      Swal.fire({
+        icon: "warning",
+        title: "Proceso en curso",
+        text: "Debe terminar el proceso para poder ingresar otro archivo.",
+      });
+      return;
+    }
     setFile(event.target.files[0]);
   };
 
   const handleSegmentSizeChange = (event) => {
-    setSegmentSize(event.target.value);
+    if (!processing && !uploadDisabled) {
+      setSegmentSize(event.target.value);
+    }
   };
 
   const handleUpload = async () => {
@@ -35,6 +46,7 @@ const FileUpload = ({ onUploadComplete }) => {
     }
 
     setProcessing(true);
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("segmentSize", segmentSize);
@@ -48,6 +60,14 @@ const FileUpload = ({ onUploadComplete }) => {
       if (response.ok) {
         const segmentNames = await response.json();
         onUploadComplete(segmentNames);
+        setTimeout(() => {
+          Swal.fire({
+            icon: "success",
+            title: "Archivo Dividido",
+            text: "El archivo se ha dividido correctamente.",
+          });
+          setUploadDisabled(true);
+        }, 1000);
       } else {
         Swal.fire({
           icon: "error",
@@ -63,7 +83,9 @@ const FileUpload = ({ onUploadComplete }) => {
         text: "No se pudo conectar con el servidor.",
       });
     } finally {
-      setProcessing(false);
+      setTimeout(() => {
+        setProcessing(false);
+      }, 1000);
     }
   };
 
@@ -76,10 +98,24 @@ const FileUpload = ({ onUploadComplete }) => {
         id="fileInput"
         onChange={handleFileChange}
         className="hidden"
+        disabled={processing || uploadDisabled}
       />
       <label
         htmlFor="fileInput"
-        className="cursor-pointer bg-white text-indigo-600 px-4 py-2 rounded-lg w-full text-center block font-semibold transition duration-300 hover:bg-indigo-100"
+        className={`cursor-pointer px-4 py-2 rounded-lg w-full text-center block font-semibold transition duration-300 ${
+          processing || uploadDisabled
+            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+            : "bg-white text-indigo-600 hover:bg-indigo-100"
+        }`}
+        onClick={() => {
+          if (processing || uploadDisabled) {
+            Swal.fire({
+              icon: "warning",
+              title: "Proceso en curso",
+              text: "Debe terminar el proceso para poder ingresar otro archivo.",
+            });
+          }
+        }}
       >
         {file ? file.name : "Seleccionar Archivo 📂"}
       </label>
@@ -94,8 +130,9 @@ const FileUpload = ({ onUploadComplete }) => {
             type="number"
             value={segmentSize}
             onChange={handleSegmentSizeChange}
-            className="w-full p-3 rounded-lg border border-white bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full p-3 rounded-lg border border-white bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-300 disabled:text-gray-600"
             placeholder="Ej: 80000"
+            disabled={processing || uploadDisabled}
           />
           <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
             bytes
@@ -104,11 +141,25 @@ const FileUpload = ({ onUploadComplete }) => {
       </div>
 
       <button
-        onClick={handleUpload}
-        className="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg w-full mt-4 font-bold transition duration-300 hover:bg-yellow-500"
-        disabled={processing}
+        onClick={() => {
+          if (processing || uploadDisabled) {
+            Swal.fire({
+              icon: "warning",
+              title: "Proceso en curso",
+              text: "Debe terminar el proceso para poder ingresar otro archivo.",
+            });
+            return;
+          }
+          handleUpload();
+        }}
+        className={`px-4 py-2 rounded-lg w-full mt-4 font-bold transition duration-300 ${
+          processing || uploadDisabled
+            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+            : "bg-yellow-400 text-gray-900 hover:bg-yellow-500"
+        }`}
+        disabled={processing || uploadDisabled}
       >
-        {processing ? "Procesando..." : "🚀 Subir y Dividir"}
+        {processing ? "⏳ Procesando Archivo..." : "🚀 Subir y Dividir"}
       </button>
     </div>
   );
